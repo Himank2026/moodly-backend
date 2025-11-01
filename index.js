@@ -12,8 +12,23 @@ import fileUpload from "express-fileupload";
 
 const app = express();
 
+// --- 1. TRUST PROXY ---
+// This is necessary for Render/Vercel communication to correctly handle secure cookies (HTTPS)
+app.set('trust proxy', 1);
+
+// --- 2. CORRECT CORS CONFIGURATION ---
+// This allows cookies (credentials: true) and all necessary methods from your CLIENT_URL
+app.use(cors({ 
+    origin: process.env.CLIENT_URL, 
+    credentials: true,
+    // Add these headers to allow necessary requests
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    preflightContinue: false,
+    optionsSuccessStatus: 204
+}));
+// ------------------------------------
+
 app.use(express.json());
-app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
 app.use(cookieParser());
 app.use(fileUpload());
 
@@ -32,9 +47,8 @@ app.use((error, req, res, next) => {
   });
 });
 
-// In backend/index.js
-
-// Use Render's assigned port, or 3001 for local development
+// --- 3. DYNAMIC PORT FIX ---
+// Use Render's assigned port (process.env.PORT) or 3001 for local development
 const PORT = process.env.PORT || 3001; 
 
 app.listen(PORT, () => {

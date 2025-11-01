@@ -2,7 +2,9 @@ import User from "../models/user.model.js";
 import Follow from "../models/follow.model.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import Imagekit from "imagekit"; // <-- This is the only ImageKit import needed
+import Imagekit from "imagekit";
+
+// Note: Ensure your Render environment variables include NODE_ENV=production
 
 export const getMe = async (req, res, next) => {
   try {
@@ -21,7 +23,7 @@ export const getMe = async (req, res, next) => {
 export const updateMe = async (req, res, next) => {
   try {
     const { displayName, userName } = req.body;
-    const userId = req.userId; // From verifyToken
+    const userId = req.userId;
 
     let updateData = { displayName, userName };
 
@@ -29,7 +31,7 @@ export const updateMe = async (req, res, next) => {
     if (req.files && req.files.profileImage) {
       const file = req.files.profileImage;
 
-      // --- 1. Initialize ImageKit here (like in your createPin) ---
+      // --- Initialize ImageKit here (like in your createPin) ---
       const imagekit = new Imagekit({
         publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
         privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
@@ -96,11 +98,14 @@ export const registerUser = async (req, res, next) => {
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
 
+    // --- FINAL FIX: Secure Cookie Settings for Live Deployment ---
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: process.env.NODE_ENV === "production" ? true : false,
+      sameSite: process.env.NODE_ENV === "production" ? 'None' : 'Lax',
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
+    // -----------------------------------------------------------
 
     const { hashedPassword, ...detailsWithoutPassword } = user.toObject();
 
@@ -136,11 +141,14 @@ export const loginUser = async (req, res, next) => {
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
 
+    // --- FINAL FIX: Secure Cookie Settings for Live Deployment ---
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: process.env.NODE_ENV === "production" ? true : false,
+      sameSite: process.env.NODE_ENV === "production" ? 'None' : 'Lax',
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
+    // -----------------------------------------------------------
 
     const { hashedPassword, ...detailsWithoutPassword } = user.toObject();
 
