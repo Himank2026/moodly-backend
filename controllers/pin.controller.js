@@ -65,9 +65,9 @@ export const createPin = async (req, res) => {
     
 // 2. UPLOAD TO IMAGEKIT
 const imagekit = new Imagekit({
-  publicKey: process.env.IK_PUBLIC_KEY,
-  privateKey: process.env.IK_PRIVATE_KEY,
-  urlEndpoint: process.env.IK_URL_ENDPOINT,
+  publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
+  privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
+  urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT,
 });
 
 const response = await imagekit.upload({
