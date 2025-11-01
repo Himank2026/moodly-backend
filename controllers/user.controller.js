@@ -2,9 +2,7 @@ import User from "../models/user.model.js";
 import Follow from "../models/follow.model.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-
-import imagekit from "../utils/imagekit.js"; // Make sure you have this import
-// --- FIX 1: Removed duplicate User import ---
+import Imagekit from "imagekit"; // <-- This is the only ImageKit import needed
 
 export const getMe = async (req, res, next) => {
   try {
@@ -13,10 +11,10 @@ export const getMe = async (req, res, next) => {
       return res.status(404).json({ message: "User not found" });
     }
     res.status(200).json(user);
-  } catch (error) { // <-- FIX 2: Added missing curly brace
+  } catch (error) {
     console.error("GET ME ERROR:", error);
     next(error);
-  } // <-- FIX 2: Added missing curly brace
+  }
 };
 
 // This updates the user's profile
@@ -31,19 +29,25 @@ export const updateMe = async (req, res, next) => {
     if (req.files && req.files.profileImage) {
       const file = req.files.profileImage;
 
-      // 1. UPLOAD TO IMAGEKIT (using the same 'file.data' method)
-      const result = await imagekit.upload({
-        file: file.data, // <-- Using file.data (Buffer)
-        fileName: file.name, // <-- Using file.name
-        folder: "/moodly-profile-pics/",
-       
+      // --- 1. Initialize ImageKit here (like in your createPin) ---
+      const imagekit = new Imagekit({
+        publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
+        privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
+        urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT,
       });
 
-      // 2. Add the secure URL to our update data
+      // 2. UPLOAD TO IMAGEKIT
+      const result = await imagekit.upload({
+        file: file.data, // Using file.data (Buffer)
+        fileName: file.name, // Using file.name
+        folder: "/moodly-profile-pics/",
+      });
+
+      // 3. Add the secure URL to our update data
       updateData.img = result.url;
     }
 
-    // 3. Find the user and update them in MongoDB
+    // 4. Find the user and update them in MongoDB
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       { $set: updateData },
@@ -54,7 +58,7 @@ export const updateMe = async (req, res, next) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // 4. Send the updated user back to the frontend
+    // 5. Send the updated user back to the frontend
     res.status(200).json(updatedUser);
   } catch (error) {
     if (error.code === 11000) {
